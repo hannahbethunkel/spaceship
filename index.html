@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title> spaceship </title>
+    <style>
+
+      body {
+        font-family: Monospace;
+        background-color: #000;
+        color: #000;
+        margin: 0px;
+        overflow: hidden;
+      }
+      #info {
+        color: #fff;
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display:block;
+      }
+      #info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+    
+    </style>
+  </head>
+
+  <body>
+
+    <div id="container"></div>
+
+
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+<script src="three.min.js"></script>
+<script src="TrackballControls.js"></script>
+<script src="MTLLoader.js"></script>
+<script src="BJMTLLoader.js"></script>
+<script src="Detector.js"></script>
+<script src="OBJMTLLoader.js"></script>
+
+
+    <script>
+
+
+      if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+      var container, stats;
+
+      var camera, controls, scene, renderer;
+
+      var cross;
+
+      init();
+      animate();
+
+      function init() {
+
+        camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.01, 1e10 );
+      //  camera.position.z = 0.2;
+        camera.position.z = -2;
+        camera.lookAt(0, 0, 0);
+
+        controls = new THREE.TrackballControls( camera );
+
+        controls.rotateSpeed = 5.0;
+        controls.zoomSpeed = 0.5;
+        controls.panSpeed = 2;
+        controls.object.up.y = -controls.object.up.y;
+
+        controls.noZoom = false;
+        controls.noPan = false;
+
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+
+        scene = new THREE.Scene();
+
+        scene.add( camera );
+
+
+        // light
+
+        var dirLight = new THREE.PointLight( 0xA569BD );
+        dirLight.position.set( 300, 1, 1000 ).normalize();
+
+        camera.add( dirLight );
+        camera.add( dirLight.target );
+
+        // Loader
+        var c = 0, s = Date.now();
+
+        function checkTime() {
+          c ++;
+          if ( c === 3 ) {
+            var e = Date.now();
+            console.log( "Total parse time: " + (e-s) + " ms" );
+          }
+
+        }
+
+        var onProgress = function ( xhr ) {
+          if ( xhr.lengthComputable ) {
+            var percentComplete = xhr.loaded / xhr.total * 100;
+            console.log( Math.round(percentComplete, 2) + '% downloaded' );
+          }
+        };
+
+        var onError = function ( xhr ) {
+        };
+
+        var loader = new THREE.OBJMTLLoader();
+
+        loader.load( 'model/space.obj', 'model/space.mtl', function ( object ) {
+
+          object.position.set( 0, 0, 0 );
+
+          // Disable back-face culling
+          object.traverse( function ( child ) {
+            if ( child instanceof THREE.Mesh ) {
+              child.material.side = THREE.DoubleSide;
+            }
+          } );
+          scene.add( object );
+
+          checkTime();
+
+        }, onProgress, onError );
+
+        // renderer
+
+        renderer = new THREE.WebGLRenderer( { antialias: false } );
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.setClearColor(0xEC7063);
+
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+        container.appendChild( renderer.domElement );
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+      }
+
+      function callbackModel( geometry, s, material, x, y, z, rx, ry ) {
+
+        var mesh = new THREE.Mesh( geometry, material );
+
+        mesh.position.set( x, y, z );
+        mesh.scale.set( s, s, s );
+        mesh.rotation.x = rx;
+        mesh.rotation.z = ry;
+
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        scene.add( mesh );
+
+      }
+
+      function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        controls.handleResize();
+
+      }
+
+      function animate() {
+
+        requestAnimationFrame( animate );
+
+        controls.update();
+        renderer.render( scene, camera );
+
+//        stats.update();
+
+      }
+
+    
+    </script>
+
+<div><canvas width="1280" height="167" style="width: 1280px; height: 167px;"></canvas></div>
+
+  </body>
+
+</html>
